@@ -64,7 +64,7 @@ PUMP_STANDARDS = {
     }
 }
 
-# --- Mechanical Vibration Limits (Default ISO 13709) ---
+# --- Mechanical Vibration Limits (Default ISO 10816) ---
 ISO_LIMITS_VELOCITY = {
     "Zone A (Good)": 2.8,
     "Zone B (Acceptable)": 4.5,
@@ -231,7 +231,7 @@ DIFFERENTIAL_PAIRS = {
 # FUNGSI HELPER - PUMP STANDARD THRESHOLD ADJUSTMENT
 # ============================================================================
 def get_standard_thresholds(pump_standard):
-    standard_config = PUMP_STANDARDS.get(pump_standard, PUMP_STANDARDS["ISO 13709"])
+    standard_config = PUMP_STANDARDS.get(pump_standard, PUMP_STANDARDS["ISO 10816"])
     return {
         "velocity_limits": standard_config["velocity_limits"],
         "temp_limits": standard_config["temp_limits"],
@@ -240,7 +240,7 @@ def get_standard_thresholds(pump_standard):
     }
 
 def adjust_severity_by_standard(severity, pump_standard):
-    multiplier = PUMP_STANDARDS.get(pump_standard, PUMP_STANDARDS["ISO 13709"])["severity_multiplier"]
+    multiplier = PUMP_STANDARDS.get(pump_standard, PUMP_STANDARDS["ISO 10816"])["severity_multiplier"]
     if pump_standard == "API 610":
         if severity == "Medium":
             return "High"
@@ -392,7 +392,7 @@ def validate_input_data(vel_data: dict, bands_data: dict, temp_data: dict,
 # ============================================================================
 def weighted_confidence_score(mech_result: dict, hyd_result: dict, elec_result: dict,
                               temp_data: dict, temp_adjustment: int,
-                              primary_fault: str, pump_standard: str = "ISO 13709") -> dict:
+                              primary_fault: str, pump_standard: str = "ISO 10816") -> dict:
     domain_weights = FAULT_DOMAIN_MAP.get(primary_fault, FAULT_DOMAIN_MAP["Normal"])
     mech_conf   = mech_result.get("confidence", 0)
     hyd_conf    = hyd_result.get("confidence", 0)
@@ -434,7 +434,7 @@ def weighted_confidence_score(mech_result: dict, hyd_result: dict, elec_result: 
             confirmation_detail.append("Temperature (elevated)")
 
     cross_bonus = CROSS_CONFIRM_BONUS.get(confirming_domains, 0)
-    sev_mult = PUMP_STANDARDS.get(pump_standard, PUMP_STANDARDS["ISO 13709"])["severity_multiplier"]
+    sev_mult = PUMP_STANDARDS.get(pump_standard, PUMP_STANDARDS["ISO 10816"])["severity_multiplier"]
     severity_adj = 0
     if sev_mult > 1.0 and mech_result.get("severity") in ["Medium", "High"]:
         severity_adj = 3
@@ -518,7 +518,7 @@ def perform_differential_diagnosis(mech_result: dict, hyd_result: dict, elec_res
                     evidence_a_found.append(f"2x RPM signifikan di arah Axial {point} → pola misalignment")
         pump_de_ax = vel_data.get("Pump DE Axial", 0)
         motor_de_ax = vel_data.get("Motor DE Axial", 0)
-        thresholds = get_standard_thresholds("ISO 13709")
+        thresholds = get_standard_thresholds("ISO 10816")
         lim_b = thresholds["velocity_limits"]["Zone B (Acceptable)"]
         if pump_de_ax > lim_b and motor_de_ax > lim_b:
             score_a += 2
@@ -593,7 +593,7 @@ def perform_differential_diagnosis(mech_result: dict, hyd_result: dict, elec_res
     if fault_b == "MISALIGNMENT":
         pump_de_ax = vel_data.get("Pump DE Axial", 0)
         motor_de_ax = vel_data.get("Motor DE Axial", 0)
-        thresholds = get_standard_thresholds("ISO 13709")
+        thresholds = get_standard_thresholds("ISO 10816")
         lim_b = thresholds["velocity_limits"]["Zone B (Acceptable)"]
         if pump_de_ax > lim_b and motor_de_ax > lim_b:
             score_b += 2
@@ -651,7 +651,7 @@ def perform_differential_diagnosis(mech_result: dict, hyd_result: dict, elec_res
 # FUNGSI REKOMENDASI - MULTI-DOMAIN (UPDATED WITH STANDARD)
 # ============================================================================
 def get_mechanical_recommendation(diagnosis: str, location: str, severity: str = "Medium",
-                                   pump_standard: str = "ISO 13709") -> str:
+                                   pump_standard: str = "ISO 10816") -> str:
     standard_note = f"({pump_standard} Standard)"
     rec_map = {
         "UNBALANCE": (
@@ -706,7 +706,7 @@ def get_mechanical_recommendation(diagnosis: str, location: str, severity: str =
     return rec_map.get(diagnosis, rec_map["Tidak Terdiagnosa"])
 
 def get_hydraulic_recommendation(diagnosis: str, fluid_type: str, severity: str = "Medium",
-                                  pump_standard: str = "ISO 13709") -> str:
+                                  pump_standard: str = "ISO 10816") -> str:
     standard_note = f"({pump_standard} Standard)"
     rec_map = {
         "CAVITATION": (
@@ -750,7 +750,7 @@ def get_hydraulic_recommendation(diagnosis: str, fluid_type: str, severity: str 
     return rec_map.get(diagnosis, rec_map["Tidak Terdiagnosa"])
 
 def get_electrical_recommendation(diagnosis: str, severity: str = "Medium",
-                                   pump_standard: str = "ISO 13709") -> str:
+                                   pump_standard: str = "ISO 10816") -> str:
     standard_note = f"({pump_standard} Standard)"
     rec_map = {
         "UNDER_VOLTAGE": (
@@ -805,8 +805,8 @@ def get_electrical_recommendation(diagnosis: str, severity: str = "Medium",
 # ============================================================================
 # FUNGSI TEMPERATURE ANALYSIS (UPDATED WITH STANDARD)
 # ============================================================================
-def get_temperature_status(temp_celsius, pump_standard="ISO 13709"):
-    temp_limits = PUMP_STANDARDS.get(pump_standard, PUMP_STANDARDS["ISO 13709"])["temp_limits"]
+def get_temperature_status(temp_celsius, pump_standard="ISO 10816"):
+    temp_limits = PUMP_STANDARDS.get(pump_standard, PUMP_STANDARDS["ISO 10816"])["temp_limits"]
     if temp_celsius is None or temp_celsius == 0:
         return "N/A", "⚪", 0
     if temp_celsius < temp_limits["normal_max"]:
@@ -818,8 +818,8 @@ def get_temperature_status(temp_celsius, pump_standard="ISO 13709"):
     else:
         return "Critical", "🔴", 2
 
-def calculate_temperature_confidence_adjustment(temp_dict, diagnosis_consistent, pump_standard="ISO 13709"):
-    temp_limits = PUMP_STANDARDS.get(pump_standard, PUMP_STANDARDS["ISO 13709"])["temp_limits"]
+def calculate_temperature_confidence_adjustment(temp_dict, diagnosis_consistent, pump_standard="ISO 10816"):
+    temp_limits = PUMP_STANDARDS.get(pump_standard, PUMP_STANDARDS["ISO 10816"])["temp_limits"]
     adjustment = 0
     notes = []
     for location, temp in temp_dict.items():
@@ -985,7 +985,7 @@ def diagnose_electrical_condition(electrical_calc, motor_specs):
 # FUNGSI DIAGNOSA - MECHANICAL DOMAIN (UPDATED WITH STANDARD)
 # ============================================================================
 def diagnose_mechanical_system(vel_data, bands_data, fft_data_dict, rpm_hz, temp_data,
-                                pump_standard="ISO 13709"):
+                                pump_standard="ISO 10816"):
     thresholds = get_standard_thresholds(pump_standard)
     velocity_limits = thresholds["velocity_limits"]
     severity_multiplier = thresholds["severity_multiplier"]
@@ -1271,7 +1271,7 @@ def generate_fault_propagation_map(mech_result, hyd_result, elec_result,
 # CROSS-DOMAIN INTEGRATION LOGIC (UPDATED WITH STANDARD)
 # ============================================================================
 def aggregate_cross_domain_diagnosis(mech_result, hyd_result, elec_result,
-                                     shared_context, temp_data=None, pump_standard="ISO 13709"):
+                                     shared_context, temp_data=None, pump_standard="ISO 10816"):
     system_result = {
         "diagnosis": "Tidak Ada Korelasi Antar Domain Terdeteksi",
         "confidence": 0,
@@ -1334,7 +1334,7 @@ def aggregate_cross_domain_diagnosis(mech_result, hyd_result, elec_result,
     else:
         system_result["severity"] = "Low"
     if temp_data:
-        temp_limits = PUMP_STANDARDS.get(pump_standard, PUMP_STANDARDS["ISO 13709"])["temp_limits"]
+        temp_limits = PUMP_STANDARDS.get(pump_standard, PUMP_STANDARDS["ISO 10816"])["temp_limits"]
         for temp in temp_data.values():
             if temp and temp > temp_limits["critical_min"]:
                 system_result["severity"] = "High"
@@ -1362,7 +1362,7 @@ def aggregate_cross_domain_diagnosis(mech_result, hyd_result, elec_result,
 # ============================================================================
 def generate_unified_csv_report(machine_id, rpm, timestamp, mech_data, hyd_data,
                                 elec_data, integrated_result, temp_data=None,
-                                pump_standard="ISO 13709"):
+                                pump_standard="ISO 10816"):
     lines = []
     lines.append(f"MULTI-DOMAIN PUMP DIAGNOSTIC REPORT - {machine_id.upper()}")
     lines.append(f"Generated: {timestamp}")
@@ -1390,7 +1390,7 @@ def generate_unified_csv_report(machine_id, rpm, timestamp, mech_data, hyd_data,
             b3 = bands.get('Band3', 0)
             point_diag = mech_data.get("point_diagnoses", {}).get(point, {})
             point_fault = point_diag.get("fault_type", "normal")
-            velocity_limits = PUMP_STANDARDS.get(pump_standard, PUMP_STANDARDS["ISO 13709"])["velocity_limits"]
+            velocity_limits = PUMP_STANDARDS.get(pump_standard, PUMP_STANDARDS["ISO 10816"])["velocity_limits"]
             if vel > velocity_limits["Zone D (Danger)"]:
                 status = "Zone_D"
             elif vel > velocity_limits["Zone C (Unacceptable)"]:
@@ -1467,7 +1467,7 @@ def main():
             "machine_id": "P-101",
             "rpm": 2950,
             "service_criticality": "Essential (Utility)",
-            "pump_standard": "ISO 13709",
+            "pump_standard": "ISO 10816",
             "motor_power": 15.0,  # ✅ DEFAULT MOTOR POWER
             "fluid_type": "Diesel / Solar",
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -2044,7 +2044,7 @@ def main():
         else:
             with st.spinner("Mengintegrasikan hasil tiga domain..."):
                 temp_data = st.session_state.get("temp_data", None)
-                pump_standard = st.session_state.get("pump_standard", "ISO 13709")
+                pump_standard = st.session_state.get("pump_standard", "ISO 10816")
                 integrated_result = aggregate_cross_domain_diagnosis(
                     st.session_state.mech_result,
                     st.session_state.hyd_result,
