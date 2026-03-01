@@ -1885,12 +1885,15 @@ def main():
         # FITUR BARU 1: FALSE POSITIVE FILTER - Validasi sebelum analisis
         # ================================================================
         if st.button("🛡️ Validasi Data Input", key="validate_mech"):
+            # Ambil motor_power dari session_state jika sudah ada dari Tab Hydraulic
+            motor_power_val = st.session_state.get("hyd_data", {}).get("measurements", {}).get("motor_power", 15.0)
+            
             val = validate_input_data(
                 vel_data=input_data,
                 bands_data=bands_inputs,
                 temp_data=temp_data,
-                suction_pressure=0, discharge_pressure=1,  # placeholder
-                flow_rate=1, motor_power=1,
+                suction_pressure=0, discharge_pressure=1,
+                flow_rate=1, motor_power=motor_power_val,  # ✅ Gunakan nilai dari Hydraulic
                 v_l1l2=400, v_l2l3=400, v_l3l1=400,
                 i_l1=10, i_l2=10, i_l3=10,
                 rpm=rpm
@@ -1909,10 +1912,13 @@ def main():
                 st.success("✅ **Semua data input valid secara fisik. Lanjutkan ke analisis.**")
 
         if st.button("🔍 Jalankan Mechanical Analysis", type="primary", key="run_mech"):
+            # Ambil motor_power dari session_state jika sudah ada dari Tab Hydraulic
+            motor_power_val = st.session_state.get("hyd_data", {}).get("measurements", {}).get("motor_power", 15.0)
+            
             # Validasi otomatis sebelum proses
             val = validate_input_data(
                 vel_data=input_data, bands_data=bands_inputs, temp_data=temp_data,
-                suction_pressure=0, discharge_pressure=1, flow_rate=1, motor_power=1,
+                suction_pressure=0, discharge_pressure=1, flow_rate=1, motor_power=motor_power_val,  # ✅ Dinamis
                 v_l1l2=400, v_l2l3=400, v_l3l1=400, i_l1=10, i_l2=10, i_l3=10, rpm=rpm
             )
             if val["status"] == "REJECT":
