@@ -360,7 +360,7 @@ def validate_input_data(vel_data: dict, bands_data: dict, temp_data: dict,
                 f"tapi Band 3 sangat rendah ({b3:.3f}g). "
                 "Kemungkinan pengukuran di kondisi yang berbeda.")
 
-    # === PERBAIKAN: Motor power vs current check ===
+    # === MOTOR POWER VS CURRENT CHECK ===
     i_avg_check = (i_l1 + i_l2 + i_l3) / 3 if all([i_l1, i_l2, i_l3]) else 0
     v_avg_check = (v_l1l2 + v_l2l3 + v_l3l1) / 3 if all([v_l1l2, v_l2l3, v_l3l1]) else 0
     if i_avg_check > 0 and v_avg_check > 0 and motor_power > 0:
@@ -1468,7 +1468,7 @@ def main():
             "rpm": 2950,
             "service_criticality": "Essential (Utility)",
             "pump_standard": "ISO 13709",
-            "motor_power": 15.0,  # === PERBAIKAN: Tambah motor_power ke shared_context ===
+            "motor_power": 15.0,  # ✅ DEFAULT MOTOR POWER
             "fluid_type": "Diesel / Solar",
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
@@ -1488,7 +1488,7 @@ def main():
         rpm = st.number_input("Operating RPM", min_value=600, max_value=3600,
                               value=st.session_state.shared_context["rpm"], step=10)
         
-        # === PERBAIKAN: Tambah input Motor Power di Sidebar ===
+        # ✅ MOTOR POWER INPUT DI SIDEBAR (SHARED CONTEXT)
         motor_power_sidebar = st.number_input("⚡ Motor Power Nameplate (kW)",
                                                min_value=0.1, max_value=500.0,
                                                value=st.session_state.shared_context.get("motor_power", 15.0),
@@ -1520,7 +1520,7 @@ def main():
             "rpm": rpm,
             "service_criticality": service_type,
             "pump_standard": pump_standard,
-            "motor_power": motor_power_sidebar,  # === PERBAIKAN: Simpan motor_power ===
+            "motor_power": motor_power_sidebar,  # ✅ SAVE TO SHARED CONTEXT
             "fluid_type": fluid_type
         })
         fluid_props = FLUID_PROPERTIES[fluid_type]
@@ -1559,7 +1559,7 @@ def main():
         "🔧 Mechanical", "💧 Hydraulic", "⚡ Electrical", "🔗 Integrated Summary"
     ])
 
-    # TAB 1: MECHANICAL (UPDATED WITH PUMP STANDARD)
+    # TAB 1: MECHANICAL
     with tab_mech:
         st.header("🔧 Mechanical Vibration Analysis")
         st.caption(f"ISO 10816-3/7 | {pump_standard} Thresholds | Centrifugal Pump + Electric Motor")
@@ -1682,7 +1682,7 @@ def main():
             fft_data_dict = {p: [(rpm_hz, 0.1), (2*rpm_hz, 0.05)] for p in points}
             st.success("✅ Semua titik vibrasi dalam batas normal.")
         
-        # === PERBAIKAN: Validasi menggunakan motor_power dari shared_context ===
+        # ✅ VALIDASI MENGGUNAKAN MOTOR POWER DARI SIDEBAR
         if st.button("🛡️ Validasi Data Input", key="validate_mech"):
             motor_power_val = st.session_state.shared_context.get("motor_power", 15.0)
             val = validate_input_data(
@@ -1690,34 +1690,34 @@ def main():
                 bands_data=bands_inputs,
                 temp_data=temp_data,
                 suction_pressure=0, discharge_pressure=1,
-                flow_rate=1, motor_power=motor_power_val,  # === PERBAIKAN ===
+                flow_rate=1, motor_power=motor_power_val,  # ✅ NO DUMMY
                 v_l1l2=400, v_l2l3=400, v_l3l1=400,
                 i_l1=10, i_l2=10, i_l3=10,
                 rpm=rpm
             )
             if val["status"] == "REJECT":
-                st.error(f"🚫 **DATA TIDAK VALID — {len(val['hard_errors'])} error kritis ditemukan. Harap perbaiki sebelum analisis.**")
+                st.error(f"🚫 **DATA TIDAK VALID — {len(val['hard_errors'])} error kritis ditemukan.**")
                 for e in val["hard_errors"]:
                     st.error(e)
             elif val["status"] == "WARNING":
-                st.warning(f"⚠️ **{val['total_issues']} peringatan ditemukan. Verifikasi data sebelum melanjutkan.**")
+                st.warning(f"⚠️ **{val['total_issues']} peringatan ditemukan.**")
                 for w in val["soft_warnings"]:
                     st.warning(w)
                 for c in val["consistency_warnings"]:
                     st.warning(c)
             else:
-                st.success("✅ **Semua data input valid secara fisik. Lanjutkan ke analisis.**")
+                st.success("✅ **Semua data input valid secara fisik.**")
 
         if st.button("🔍 Jalankan Mechanical Analysis", type="primary", key="run_mech"):
-            # === PERBAIKAN: Validasi menggunakan motor_power dari shared_context ===
+            # ✅ VALIDASI MENGGUNAKAN MOTOR POWER DARI SIDEBAR
             motor_power_val = st.session_state.shared_context.get("motor_power", 15.0)
             val = validate_input_data(
                 vel_data=input_data, bands_data=bands_inputs, temp_data=temp_data,
-                suction_pressure=0, discharge_pressure=1, flow_rate=1, motor_power=motor_power_val,  # === PERBAIKAN ===
+                suction_pressure=0, discharge_pressure=1, flow_rate=1, motor_power=motor_power_val,  # ✅ NO DUMMY
                 v_l1l2=400, v_l2l3=400, v_l3l1=400, i_l1=10, i_l2=10, i_l3=10, rpm=rpm
             )
             if val["status"] == "REJECT":
-                st.error("🚫 Analisis dibatalkan — data input mengandung error fisik. Klik **Validasi Data Input** untuk detail.")
+                st.error("🚫 Analisis dibatalkan — data input mengandung error fisik.")
                 for e in val["hard_errors"]:
                     st.error(e)
             else:
@@ -1798,7 +1798,7 @@ def main():
         with col2:
             flow_rate = st.number_input("Flow Rate [m³/h]", min_value=0.0, value=100.0,
                                         step=1.0, key="flow_rate")
-            # === PERBAIKAN: Gunakan motor_power dari shared_context ===
+            # ✅ MOTOR POWER DARI SIDEBAR (TAPI BISA DI-override di sini jika perlu)
             motor_power = st.number_input("Motor Power [kW]", min_value=0.0,
                                           value=st.session_state.shared_context.get("motor_power", 15.0),
                                           step=0.5, key="motor_power")
@@ -1940,10 +1940,13 @@ def main():
             i_l1 = st.number_input("L1 (A)", min_value=0.0, value=82.0, step=0.5, key="i_l1")
             i_l2 = st.number_input("L2 (A)", min_value=0.0, value=84.0, step=0.5, key="i_l2")
             i_l3 = st.number_input("L3 (A)", min_value=0.0, value=83.0, step=0.5, key="i_l3")
+        
+        # ✅ VALIDASI MENGGUNAKAN MOTOR POWER DARI SIDEBAR
         if st.button("🛡️ Validasi Data Electrical", key="validate_elec"):
+            motor_power_val = st.session_state.shared_context.get("motor_power", 15.0)
             val = validate_input_data(
                 vel_data={}, bands_data={}, temp_data={},
-                suction_pressure=0, discharge_pressure=1, flow_rate=1, motor_power=1,
+                suction_pressure=0, discharge_pressure=1, flow_rate=1, motor_power=motor_power_val,  # ✅ NO DUMMY
                 v_l1l2=v_l1l2, v_l2l3=v_l2l3, v_l3l1=v_l3l1,
                 i_l1=i_l1, i_l2=i_l2, i_l3=i_l3, rpm=rpm
             )
@@ -1956,10 +1959,13 @@ def main():
                     st.warning(w)
             else:
                 st.success("✅ Data electrical valid. Lanjutkan analisis.")
+        
         if st.button("⚡ Generate Electrical Diagnosis", type="primary", key="run_elec"):
+            # ✅ VALIDASI MENGGUNAKAN MOTOR POWER DARI SIDEBAR
+            motor_power_val = st.session_state.shared_context.get("motor_power", 15.0)
             val = validate_input_data(
                 vel_data={}, bands_data={}, temp_data={},
-                suction_pressure=0, discharge_pressure=1, flow_rate=1, motor_power=1,
+                suction_pressure=0, discharge_pressure=1, flow_rate=1, motor_power=motor_power_val,  # ✅ NO DUMMY
                 v_l1l2=v_l1l2, v_l2l3=v_l2l3, v_l3l1=v_l3l1,
                 i_l1=i_l1, i_l2=i_l2, i_l3=i_l3, rpm=rpm
             )
