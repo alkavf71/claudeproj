@@ -28,7 +28,7 @@ PUMP_STANDARDS = {
         "severity_multiplier": 1.2,
         "description": "Heavy-duty untuk Oil & Gas, critical service"
     },
-    "ISO 13709": {
+    "ISO 10816": {
         "velocity_limits": {
             "Zone A (Good)": 2.8,
             "Zone B (Acceptable)": 4.5,
