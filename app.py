@@ -378,7 +378,7 @@ def validate_input_data(vel_data: dict, bands_data: dict, temp_data: dict,
         estimated_power_kw = (v_avg_check * i_avg_check * 1.732 * 0.85) / 1000
         ratio = motor_power / estimated_power_kw if estimated_power_kw > 0 else 1
         
-        if ratio > 3.0 or ratio < 0.2:
+        if ratio > 10.0 or ratio < 0.5:
             consistency_warnings.append(
                 f"⚠️ KONSISTENSI: Motor power input ({motor_power:.1f} kW) tidak sesuai dengan "
                 f"estimasi dari voltage/current ({estimated_power_kw:.1f} kW). "
